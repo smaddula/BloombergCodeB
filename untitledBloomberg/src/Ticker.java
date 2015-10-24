@@ -1,3 +1,5 @@
+import jdk.internal.util.xml.impl.Pair;
+
 import java.util.ArrayList;
 
 /**
@@ -10,6 +12,7 @@ public class Ticker {
     double startDividend;
     double curDividend;
     double buyPrice;
+
 
     public Ticker(String Name, int units, double dividend, double buyPrice) {
         this.Name = Name;
