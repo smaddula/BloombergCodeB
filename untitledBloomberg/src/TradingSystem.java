@@ -1,17 +1,24 @@
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by venkata on 10/23/15.
  */
 public class TradingSystem {
     private ExchangeClient ec;
+
+    BackgroundDataPopulator backgroundDataPopulator;
+
     public TradingSystem() throws IOException {
+        backgroundDataPopulator = new BackgroundDataPopulator();
+        Thread thread = new Thread(backgroundDataPopulator);
+        thread.start();
         this.ec = getExchangeClient("TradingSystem");
     }
 
-    static HashMap<String, ExchangeClient> exchangeClients = new HashMap<String, ExchangeClient>();
+    static ConcurrentHashMap<String, ExchangeClient> exchangeClients = new ConcurrentHashMap<String, ExchangeClient>();
     static ExchangeClient getExchangeClient(String whoIsThis) throws IOException {
         if(exchangeClients.containsKey(whoIsThis.toLowerCase())){
             return exchangeClients.get(whoIsThis.toLowerCase());
@@ -42,10 +49,10 @@ public class TradingSystem {
             }
         });
 
-        while (true) {
+        /*while (true) {
             System.out.println(ts.ec.getCash());
             Thread.sleep(1000);
-        }
+        }*/
     }
 
 }

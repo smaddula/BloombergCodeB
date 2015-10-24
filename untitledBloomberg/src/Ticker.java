@@ -8,17 +8,17 @@ import java.util.ArrayList;
 public class Ticker {
 
     String Name;
-    int units;
-    double startDividend;
-    double curDividend;
-    double buyPrice;
+    int units = 0;
+    double netWorth = 0;
+    double startDividend = 0;
+    double curDividend = 0;
+    double buyPrice = 0;
+    double volatility = 0;
+    Orders curOrders = null;
 
 
-    public Ticker(String Name, int units, double dividend, double buyPrice) {
+    public Ticker(String Name) {
         this.Name = Name;
-        this.units = units;
-        this.startDividend = dividend;
-        this.buyPrice = buyPrice;
     }
 
     public void addUnits(double price, int units) {
@@ -32,7 +32,7 @@ public class Ticker {
 
     }
 
-    public void addDividend(double dividend) {
+    public void updateCurDividend(double dividend) {
         this.curDividend = dividend;
     }
 }

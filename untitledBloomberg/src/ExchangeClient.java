@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 
@@ -48,9 +49,17 @@ public class ExchangeClient {
         if ((line = this.bin.readLine()) != null) {
 
             String[] s = line.split(" ");
-            for (int i=1; i <s.length; i++) {
+            int i=1;
+            while (i <s.length) {
                 if (s[i].equals("BID")) {
 
+                    Trade myTrade = new Trade(Double.parseDouble(s[i+2]),Integer.parseInt(s[i+3]));
+                    myOrder.addToBidList(myTrade);
+                    i= i+4;
+                } else if (s[i].equals("ASK")) {
+                    Trade myTrade = new Trade(Double.parseDouble(s[i+2]),Integer.parseInt(s[i+3]));
+                    myOrder.addToBidList(myTrade);
+                    i= i+4;
                 }
             }
         }
@@ -119,8 +128,34 @@ public class ExchangeClient {
         this.pout.flush();
     }
 
+    public ArrayList<SecurityDTO> getSecurities() throws IOException {
+        HashMap<String,Double> result = new HashMap<String,Double>();
+        StringBuilder sb = new StringBuilder("SECURITIES");
+        this.pout.println(sb.toString());
+        this.pout.flush();
+        String line;
+        ArrayList<SecurityDTO> returnSecurityList = new ArrayList<SecurityDTO>();
+        SecurityDTO security ;
+        if ((line = this.bin.readLine()) != null) {
+            String[] s = line.split(" ");
+            int i=1;
+            while(i < s.length ) {
+                security = new SecurityDTO();
+                security.tickerName = s[i];
+                i++;
+                security.netWorth = Double.parseDouble(s[i]);
+                i++;
+                security.dividend = Double.parseDouble(s[i]);
+                i++;
+                security.volatality = Double.parseDouble(s[i]);
+                i++;
+                returnSecurityList.add(security);
+            }
+        }
+        return returnSecurityList;
+    }
 
-    public HashMap<String,Double> getDividends() throws IOException {
+    public HashMap<String,Double> getMyDividends() throws IOException {
         HashMap<String,Double> result = new HashMap<String,Double>();
         StringBuilder sb = new StringBuilder();
         sb.append("MY_SECURITIES");
@@ -129,9 +164,10 @@ public class ExchangeClient {
         String line;
         if ((line = this.bin.readLine()) != null) {
             String[] s = line.split(" ");
-            int i=0;
+            int i=1;
             while(i < s.length -2) {
                 result.put(s[i], Double.parseDouble(s[i+2]));
+                i += 3;
             }
         }
         return result;
