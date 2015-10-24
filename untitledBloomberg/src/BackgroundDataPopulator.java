@@ -44,10 +44,12 @@ public class BackgroundDataPopulator implements Runnable {
 
                     Ticker ticker = allTickers.get(entry.getKey());
                     ticker.updateCurDividend(entry.getValue().dividend);
+                    int tmp = ticker.units;
                     ticker.units = entry.getValue().units;
+                    if(ticker.units > tmp) ticker.bidUnits = ticker.bidUnits - tmp;
+                    else if(ticker.units < tmp) ticker.askUnits = ticker.askUnits -tmp;
                     ticker.buyPrice = ticker.bidPrice;
-                    ticker.bidPrice = 0;
-                    ticker.bidUnits = 0;
+
                 }
                 for(ConcurrentHashMap.Entry<String, Ticker> entry : allTickers.entrySet()){
                     entry.getValue().curOrders = ec.getOrders(entry.getKey());

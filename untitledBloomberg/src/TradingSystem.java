@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Created by venkata on 10/23/15.
@@ -35,31 +36,76 @@ public class TradingSystem implements Runnable {
 
         try {
             Double cash = ec.getCash();
-            while (cash > 30) {
+            while (true) {
 
-                Ticker besTicker=null;
-                for (ConcurrentHashMap.Entry<String, Ticker> entry : backgroundDataPopulator.allTickers.entrySet()) {
-                    Ticker ticker = entry.getValue();
-                    if(!ticker.curOrders.isMinAskAvailable())
-                        continue;
-                    if(besTicker == null ){
-                        besTicker = ticker;
-                    }else{
-                        if(besTicker.curOrders != null && ticker.curOrders !=null) {
-                            if (besTicker.netWorth / besTicker.curOrders.getMinAskPrice() < ticker.netWorth / ticker.curOrders.getMinAskPrice()) {
-                                besTicker = ticker;
+                if (cash > 30) {
+                    Ticker besTicker = null;
+                    for (ConcurrentHashMap.Entry<String, Ticker> entry : backgroundDataPopulator.allTickers.entrySet()) {
+                        Ticker ticker = entry.getValue();
+                        if (!ticker.curOrders.isMinAskAvailable() || ticker.units != 0 || ticker.askUnits > 0)
+                            continue;
+                        if (besTicker == null) {
+                            besTicker = ticker;
+                        } else {
+                            if (besTicker.curOrders != null && ticker.curOrders != null && ((int) Math.floor(cash / (3 * ticker.curOrders.getMinAskPrice())) != 0)) {
+                                if (besTicker.netWorth / besTicker.curOrders.getMinAskPrice() < ticker.netWorth / ticker.curOrders.getMinAskPrice()) {
+                                    besTicker = ticker;
+                                }
                             }
                         }
                     }
-                }
-                if(besTicker!=null && besTicker.units == 0) {
-                    double minPrice = besTicker.curOrders.getMinAskPrice();
-                    ec.placeBid(besTicker.Name, minPrice * 1.001, (int) Math.floor(cash / (3 * minPrice)));
-                    besTicker.bidPrice = minPrice * 1.001;
-                    besTicker.bidUnits = (int) Math.floor(cash / (3 * minPrice));
+                    if (besTicker != null ) {
+                        double minPrice = besTicker.curOrders.getMinAskPrice();
+                        double newBidValue = minPrice * 1.001;
+                        if(besTicker.bidPrice <newBidValue || besTicker.bidUnits == 0 ){
+                           if(besTicker.bidUnits != 0) ec.clearBid(besTicker.Name);
+                            ec.placeBid(besTicker.Name, minPrice * 1.001, (int) Math.floor(cash / (3 * minPrice)));
+                            besTicker.bidPrice = minPrice * 1.001;
+                            besTicker.bidUnits = (int) Math.floor(cash / (3 * minPrice));
+                        }
+                    }
+
                 }
 
                 cash = ec.getCash();
+
+                for (ConcurrentHashMap.Entry<String, Ticker> entry : backgroundDataPopulator.allTickers.entrySet()) {
+                    Ticker ticker = entry.getValue();
+                    if (!ticker.curOrders.isMaxBidAvailable() || ticker.units == 0 ||ticker.bidUnits > 0)
+                        continue;
+                    if ((ticker.curDividend < ticker.startDividend / 2  && (ticker.curOrders.getMaxBidPrice() - ticker.buyPrice > 0) )
+                            || ((ticker.curOrders.getMaxBidPrice() - ticker.buyPrice) / ticker.buyPrice < -0.2 ) ||
+                            ((ticker.curOrders.getMaxBidPrice() - ticker.buyPrice) / ticker.buyPrice > 0.05 )) {
+                        double tmp = ticker.askPrice;
+                        ticker.askPrice = ticker.curOrders.getMaxBidPrice() * 0.999;
+                        ticker.askUnits = ticker.units;
+                        if(ticker.askUnits > 0 && ticker.askPrice > tmp) {
+                            ec.clearAsk(ticker.Name);
+                            ec.placeAsk(ticker.Name,ticker.askPrice,ticker.askUnits);
+                        } else if (ticker.askUnits > 0 && ticker.askPrice < tmp) continue;
+                        else ec.placeAsk(ticker.Name, ticker.curOrders.getMaxBidPrice() * 0.999, ticker.units);
+                        continue;
+                    }
+                    /*if ((ticker.curOrders.getMaxBidPrice() - ticker.buyPrice) / ticker.buyPrice > 0.05 ) {
+                        ticker.askPrice = ticker.curOrders.getMaxBidPrice() * 0.999;
+                        ticker.askUnits = ticker.units;
+                        ec.placeAsk(ticker.Name, ticker.curOrders.getMaxBidPrice() * 0.999, ticker.units);
+                        continue;
+                    }*/
+                    if (ticker.curOrders.getMaxBidPrice() - ticker.buyPrice < 0 )
+                        continue;
+
+                    /*if (ticker.curDividend < ticker.startDividend / 2 ) {
+                        ticker.askPrice = ticker.curOrders.getMaxBidPrice() * 0.999;
+                        ticker.askUnits = ticker.units;
+                        ec.placeAsk(ticker.Name, ticker.curOrders.getMaxBidPrice() * 0.99, ticker.units);
+                        continue;
+                    }*/
+                }
+
+                cash = ec.getCash();
+
+
             }
         } catch (IOException e) {
             e.printStackTrace();

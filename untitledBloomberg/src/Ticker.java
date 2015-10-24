@@ -17,6 +17,8 @@ public class Ticker {
     Orders curOrders = null;
     int bidUnits = 0;
     double bidPrice = 0;
+    int askUnits = 0;
+    double askPrice = 0;
 
     public Ticker(String Name) {
         this.Name = Name;
