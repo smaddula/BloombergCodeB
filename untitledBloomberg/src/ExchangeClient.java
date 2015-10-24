@@ -199,6 +199,11 @@ public class ExchangeClient {
         double cash = 0.0;
         if ((line = this.bin.readLine()) != null) {
             System.out.println(line);
+            while(line.equals("SERVER_NOT_ACTIVE")) {
+                this.pout.println("MY_CASH");
+                this.pout.flush();
+                line = this.bin.readLine();
+            }
             cash = Double.parseDouble(line.split(" ")[1]);
         }
         return cash;

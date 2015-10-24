@@ -19,6 +19,7 @@ public class Ticker {
     double bidPrice = 0;
     int askUnits = 0;
     double askPrice = 0;
+    ArrayList<Double> history = new ArrayList<Double>();
 
     public Ticker(String Name) {
         this.Name = Name;
@@ -37,5 +38,17 @@ public class Ticker {
 
     public void updateCurDividend(double dividend) {
         this.curDividend = dividend;
+    }
+
+    public boolean isHistoricPositive(){
+        int count = 0;
+        int j=0;
+        for(int i=history.size()-1;i>=1&&j<10;j++,i--){
+            if(history.get(i)>history.get(i-1))
+                count++;
+            else
+                count--;
+        }
+        return count>0;
     }
 }

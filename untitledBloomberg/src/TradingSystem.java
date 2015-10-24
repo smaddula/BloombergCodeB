@@ -13,10 +13,10 @@ public class TradingSystem implements Runnable {
     BackgroundDataPopulator backgroundDataPopulator;
 
     public TradingSystem() throws IOException {
-        backgroundDataPopulator = new BackgroundDataPopulator();
-        Thread bakgroundThread = new Thread(backgroundDataPopulator);
-        bakgroundThread.start();
+        //Thread bakgroundThread = new Thread(backgroundDataPopulator);
+        //bakgroundThread.start();
         this.ec = getExchangeClient("TradingSystem");
+        backgroundDataPopulator = new BackgroundDataPopulator();
     }
 
     static ConcurrentHashMap<String, ExchangeClient> exchangeClients = new ConcurrentHashMap<String, ExchangeClient>();
@@ -36,32 +36,33 @@ public class TradingSystem implements Runnable {
 
         try {
             Double cash = ec.getCash();
-            while (true) {
+            //while (true) {
 
-                if (cash > 30) {
+                if (cash > 300) {
                     Ticker besTicker = null;
                     for (ConcurrentHashMap.Entry<String, Ticker> entry : backgroundDataPopulator.allTickers.entrySet()) {
                         Ticker ticker = entry.getValue();
-                        if (!ticker.curOrders.isMinAskAvailable() || ticker.units != 0 || ticker.askUnits > 0)
+                        if (!ticker.curOrders.isMinAskAvailable() || ticker.units != 0 || ticker.askUnits > 0 || ((int) Math.floor(cash / (2 * ticker.curOrders.getMinAskPrice())) == 0))
                             continue;
                         if (besTicker == null) {
                             besTicker = ticker;
                         } else {
-                            if (besTicker.curOrders != null && ticker.curOrders != null && ((int) Math.floor(cash / (3 * ticker.curOrders.getMinAskPrice())) != 0)) {
-                                if (besTicker.netWorth / besTicker.curOrders.getMinAskPrice() < ticker.netWorth / ticker.curOrders.getMinAskPrice()) {
+                            if ( besTicker.curOrders != null && ticker.curOrders != null && ((int) Math.floor(cash / (2 * ticker.curOrders.getMinAskPrice())) != 0)) {
+                                if ( ticker.isHistoricPositive() ||  besTicker.netWorth / besTicker.curOrders.getMinAskPrice() < ticker.netWorth / ticker.curOrders.getMinAskPrice()) {
                                     besTicker = ticker;
                                 }
                             }
                         }
                     }
                     if (besTicker != null ) {
+
                         double minPrice = besTicker.curOrders.getMinAskPrice();
                         double newBidValue = minPrice * 1.001;
                         if(besTicker.bidPrice <newBidValue || besTicker.bidUnits == 0 ){
                            if(besTicker.bidUnits != 0) ec.clearBid(besTicker.Name);
-                            ec.placeBid(besTicker.Name, minPrice * 1.001, (int) Math.floor(cash / (3 * minPrice)));
+                            ec.placeBid(besTicker.Name, minPrice * 1.001, (int) Math.floor(cash / (2 * minPrice)));
                             besTicker.bidPrice = minPrice * 1.001;
-                            besTicker.bidUnits = (int) Math.floor(cash / (3 * minPrice));
+                            besTicker.bidUnits = (int) Math.floor(cash / (2 * minPrice));
                         }
                     }
 
@@ -71,11 +72,16 @@ public class TradingSystem implements Runnable {
 
                 for (ConcurrentHashMap.Entry<String, Ticker> entry : backgroundDataPopulator.allTickers.entrySet()) {
                     Ticker ticker = entry.getValue();
-                    if (!ticker.curOrders.isMaxBidAvailable() || ticker.units == 0 ||ticker.bidUnits > 0)
+                    if (!ticker.curOrders.isMaxBidAvailable() || ticker.units == 0 || !ticker.isHistoricPositive() )
                         continue;
                     if ((ticker.curDividend < ticker.startDividend / 2  && (ticker.curOrders.getMaxBidPrice() - ticker.buyPrice > 0) )
-                            || ((ticker.curOrders.getMaxBidPrice() - ticker.buyPrice) / ticker.buyPrice < -0.2 ) ||
-                            ((ticker.curOrders.getMaxBidPrice() - ticker.buyPrice) / ticker.buyPrice > 0.05 )) {
+                            || ((ticker.curOrders.getMaxBidPrice() - ticker.buyPrice) / ticker.buyPrice < -0.3 ) ||
+                            ((ticker.curOrders.getMaxBidPrice() - ticker.buyPrice) / ticker.buyPrice > 0.1 )) {
+
+                        ec.clearBid(ticker.Name);
+                        ticker.bidUnits=0;
+
+
                         double tmp = ticker.askPrice;
                         ticker.askPrice = ticker.curOrders.getMaxBidPrice() * 0.999;
                         ticker.askUnits = ticker.units;
@@ -106,7 +112,7 @@ public class TradingSystem implements Runnable {
                 cash = ec.getCash();
 
 
-            }
+            //}
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -119,8 +125,6 @@ public class TradingSystem implements Runnable {
     public static void main(String[] args) throws IOException, InterruptedException {
 
         final TradingSystem ts = new TradingSystem();
-        Thread algorithmThread = new Thread(ts);
-        algorithmThread.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -139,6 +143,15 @@ public class TradingSystem implements Runnable {
                 System.out.println("Shutdown hook ran!");
             }
         });
+
+        while (true) {
+            ts.backgroundDataPopulator.run();
+            ts.run();
+        }
+
+        //Thread algorithmThread = new Thread(ts);
+        //algorithmThread.start();
+
 
 
 

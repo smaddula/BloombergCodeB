@@ -9,18 +9,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BackgroundDataPopulator implements Runnable {
 
-    ConcurrentHashMap<String , Ticker> allTickers;
+    ConcurrentHashMap<String, Ticker> allTickers;
     ExchangeClient ec;
+
     public BackgroundDataPopulator() throws IOException {
         allTickers = new ConcurrentHashMap<String, Ticker>();
-        ec = TradingSystem.getExchangeClient("BackgroundDataPopulator");
+        ec = TradingSystem.getExchangeClient("TradingSystem");
         initialize();
     }
 
     private void initialize() throws IOException {
-        for(SecurityDTO security : ec.getSecurities()){
-            if(!allTickers.containsKey(security.tickerName)){
-                allTickers.put(security.tickerName , new Ticker(security.tickerName) );
+        for (SecurityDTO security : ec.getSecurities()) {
+            if (!allTickers.containsKey(security.tickerName)) {
+                allTickers.put(security.tickerName, new Ticker(security.tickerName));
             }
             Ticker ticker = allTickers.get(security.tickerName);
             ticker.startDividend = security.dividend;
@@ -28,7 +29,7 @@ public class BackgroundDataPopulator implements Runnable {
             ticker.netWorth = security.netWorth;
         }
 
-        for(ConcurrentHashMap.Entry<String, Ticker> entry : allTickers.entrySet()){
+        for (ConcurrentHashMap.Entry<String, Ticker> entry : allTickers.entrySet()) {
             entry.getValue().curOrders = ec.getOrders(entry.getKey());
         }
     }
@@ -36,31 +37,35 @@ public class BackgroundDataPopulator implements Runnable {
     @Override
     public void run() {
 
-        while(true){
-            try {
-                Thread.sleep(1000);
-                HashMap<String,SecurityDTO> latestDividendValues = ec.getMySecurities();
-                for( HashMap.Entry<String, SecurityDTO> entry : latestDividendValues.entrySet() ){
+        //while(true){
+        try {
+            //Thread.sleep(20);
+            HashMap<String, SecurityDTO> latestDividendValues = ec.getMySecurities();
+            for (HashMap.Entry<String, SecurityDTO> entry : latestDividendValues.entrySet()) {
 
-                    Ticker ticker = allTickers.get(entry.getKey());
-                    ticker.updateCurDividend(entry.getValue().dividend);
-                    int tmp = ticker.units;
-                    ticker.units = entry.getValue().units;
-                    if(ticker.units > tmp) ticker.bidUnits = ticker.bidUnits - tmp;
-                    else if(ticker.units < tmp) ticker.askUnits = ticker.askUnits -tmp;
-                    ticker.buyPrice = ticker.bidPrice;
+                Ticker ticker = allTickers.get(entry.getKey());
+                ticker.updateCurDividend(entry.getValue().dividend);
+                int tmp = ticker.units;
+                ticker.units = entry.getValue().units;
+                if (ticker.units > tmp) ticker.bidUnits = ticker.bidUnits - tmp;
+                else if (ticker.units < tmp) ticker.askUnits = ticker.askUnits - tmp;
+                ticker.buyPrice = ticker.bidPrice;
 
-                }
-                for(ConcurrentHashMap.Entry<String, Ticker> entry : allTickers.entrySet()){
-                    entry.getValue().curOrders = ec.getOrders(entry.getKey());
-                }
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+
+            for (SecurityDTO security : ec.getSecurities()) {
+                Ticker ticker = allTickers.get(security.tickerName);
+                ticker.history.add( security.netWorth);
+            }
+
+            for (ConcurrentHashMap.Entry<String, Ticker> entry : allTickers.entrySet()) {
+                entry.getValue().curOrders = ec.getOrders(entry.getKey());
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        //}
     }
 
 }
