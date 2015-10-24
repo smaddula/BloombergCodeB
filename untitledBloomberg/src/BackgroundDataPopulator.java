@@ -25,6 +25,10 @@ public class BackgroundDataPopulator implements Runnable {
             ticker.volatility = security.volatality;
             ticker.netWorth = security.netWorth;
         }
+
+        for(ConcurrentHashMap.Entry<String, Ticker> entry : allTickers.entrySet()){
+            entry.getValue().curOrders = ec.getOrders(entry.getKey());
+        }
     }
 
     @Override
@@ -37,7 +41,7 @@ public class BackgroundDataPopulator implements Runnable {
                 for( HashMap.Entry<String, Double> entry : latestDividendValues.entrySet() ){
                     allTickers.get( entry.getKey()).updateCurDividend(entry.getValue());
                 }
-                for(HashMap.Entry<String, Ticker> entry : allTickers.entrySet()){
+                for(ConcurrentHashMap.Entry<String, Ticker> entry : allTickers.entrySet()){
                     entry.getValue().curOrders = ec.getOrders(entry.getKey());
                 }
 

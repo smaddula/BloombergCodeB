@@ -26,6 +26,40 @@ public class Orders {
     List<Trade> bidList;
     List<Trade> askList;
 
+    public boolean isMinAskAvailable()
+    {
+        if(askList.size() == 0)
+            return  false;
+        return true;
+    }
+
+    public boolean isMaxBidAvailable()
+    {
+        if(bidList.size() == 0)
+            return  false;
+        return true;
+    }
+
+
+    public double getMinAskPrice(){
+        double minAskPrice = askList.get(0).price;
+        for(Trade trade:askList){
+            if(minAskPrice > trade.getPrice())
+                minAskPrice = trade.getPrice();
+        }
+        return  minAskPrice;
+    }
+
+
+    public double getMaxBidPrice(){
+        double maxBidPrice = bidList.get(0).price;
+        for(Trade trade:bidList){
+            if(maxBidPrice < trade.getPrice())
+                maxBidPrice = trade.getPrice();
+        }
+        return maxBidPrice;
+    }
+
     public Orders() {
         this.bidList = new ArrayList<Trade>();
         this.askList= new ArrayList<Trade>();

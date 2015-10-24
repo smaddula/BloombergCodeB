@@ -58,7 +58,7 @@ public class ExchangeClient {
                     i= i+4;
                 } else if (s[i].equals("ASK")) {
                     Trade myTrade = new Trade(Double.parseDouble(s[i+2]),Integer.parseInt(s[i+3]));
-                    myOrder.addToBidList(myTrade);
+                    myOrder.addToAskList(myTrade);
                     i= i+4;
                 }
             }
