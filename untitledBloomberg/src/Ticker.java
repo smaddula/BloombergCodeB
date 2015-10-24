@@ -15,7 +15,8 @@ public class Ticker {
     double buyPrice = 0;
     double volatility = 0;
     Orders curOrders = null;
-
+    int bidUnits = 0;
+    double bidPrice = 0;
 
     public Ticker(String Name) {
         this.Name = Name;

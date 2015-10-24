@@ -1,3 +1,5 @@
+import sun.security.krb5.internal.Ticket;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,9 +39,15 @@ public class BackgroundDataPopulator implements Runnable {
         while(true){
             try {
                 Thread.sleep(1000);
-                HashMap<String,Double> latestDividendValues = ec.getMyDividends();
-                for( HashMap.Entry<String, Double> entry : latestDividendValues.entrySet() ){
-                    allTickers.get( entry.getKey()).updateCurDividend(entry.getValue());
+                HashMap<String,SecurityDTO> latestDividendValues = ec.getMySecurities();
+                for( HashMap.Entry<String, SecurityDTO> entry : latestDividendValues.entrySet() ){
+
+                    Ticker ticker = allTickers.get(entry.getKey());
+                    ticker.updateCurDividend(entry.getValue().dividend);
+                    ticker.units = entry.getValue().units;
+                    ticker.buyPrice = ticker.bidPrice;
+                    ticker.bidPrice = 0;
+                    ticker.bidUnits = 0;
                 }
                 for(ConcurrentHashMap.Entry<String, Ticker> entry : allTickers.entrySet()){
                     entry.getValue().curOrders = ec.getOrders(entry.getKey());

@@ -155,8 +155,8 @@ public class ExchangeClient {
         return returnSecurityList;
     }
 
-    public HashMap<String,Double> getMyDividends() throws IOException {
-        HashMap<String,Double> result = new HashMap<String,Double>();
+    public HashMap<String,SecurityDTO> getMySecurities() throws IOException {
+        HashMap<String,SecurityDTO> result = new HashMap<String,SecurityDTO>();
         StringBuilder sb = new StringBuilder();
         sb.append("MY_SECURITIES");
         this.pout.println(sb.toString());
@@ -166,7 +166,12 @@ public class ExchangeClient {
             String[] s = line.split(" ");
             int i=1;
             while(i < s.length -2) {
-                result.put(s[i], Double.parseDouble(s[i+2]));
+
+                SecurityDTO securityDTO = new SecurityDTO();
+                securityDTO.dividend = Double.parseDouble(s[i + 2]);
+                securityDTO.units = Integer.parseInt(s[i+1]);
+
+                result.put(s[i], securityDTO);
                 i += 3;
             }
         }
@@ -185,7 +190,6 @@ public class ExchangeClient {
             System.out.println(line);
         }
     }
-
 
 
     public double getCash() throws IOException {

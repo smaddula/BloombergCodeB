@@ -6,4 +6,5 @@ public class SecurityDTO {
     Double netWorth;
     Double dividend;
     Double volatality;
+    int units;
 }

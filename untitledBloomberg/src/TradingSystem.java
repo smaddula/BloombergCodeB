@@ -52,9 +52,11 @@ public class TradingSystem implements Runnable {
                         }
                     }
                 }
-                if(besTicker!=null) {
+                if(besTicker!=null && besTicker.units == 0) {
                     double minPrice = besTicker.curOrders.getMinAskPrice();
                     ec.placeBid(besTicker.Name, minPrice * 1.001, (int) Math.floor(cash / (3 * minPrice)));
+                    besTicker.bidPrice = minPrice * 1.001;
+                    besTicker.bidUnits = (int) Math.floor(cash / (3 * minPrice));
                 }
 
                 cash = ec.getCash();
